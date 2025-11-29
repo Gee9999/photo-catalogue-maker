@@ -120,11 +120,12 @@ const Index = () => {
     }
   };
 
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = async () => {
     if (matchedItems.length === 0) return;
 
+    setIsProcessing(true);
     try {
-      const excelBlob = generateExcel(matchedItems);
+      const excelBlob = await generateExcel(matchedItems);
       const url = URL.createObjectURL(excelBlob);
       const a = document.createElement("a");
       a.href = url;
@@ -134,7 +135,7 @@ const Index = () => {
 
       toast({
         title: "Excel downloaded",
-        description: "Your catalogue spreadsheet is ready",
+        description: "Your catalogue spreadsheet with images is ready",
       });
     } catch (error) {
       toast({
@@ -142,6 +143,8 @@ const Index = () => {
         description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
