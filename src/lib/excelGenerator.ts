@@ -48,7 +48,7 @@ export const generateExcel = async (items: MatchedItem[]): Promise<Blob> => {
 
   // Set column widths
   worksheet.columns = [
-    { header: "Photo", key: "photo", width: 20 },
+    { header: "Photo", key: "photo", width: 35 },
     { header: "Code", key: "code", width: 15 },
     { header: "Description", key: "description", width: 40 },
     { header: "Price", key: "price", width: 12 },
@@ -71,8 +71,8 @@ export const generateExcel = async (items: MatchedItem[]): Promise<Blob> => {
     const item = items[i];
     const rowNumber = i + 2; // +2 because Excel is 1-indexed and we have header row
 
-    // Set row height to accommodate 120px image (approximately 90 points)
-    worksheet.getRow(rowNumber).height = 90;
+    // Set row height to accommodate 240px image (approximately 180 points)
+    worksheet.getRow(rowNumber).height = 180;
 
     // Add text data
     worksheet.addRow({
@@ -88,8 +88,8 @@ export const generateExcel = async (items: MatchedItem[]): Promise<Blob> => {
     // Add image if available
     if (item.photoFile) {
       try {
-        // Resize image to 120x120
-        const resizedBlob = await resizeImage(item.photoFile, 120, 120);
+        // Resize image to 240x240
+        const resizedBlob = await resizeImage(item.photoFile, 240, 240);
         const arrayBuffer = await resizedBlob.arrayBuffer();
 
         // Add image to workbook
@@ -101,7 +101,7 @@ export const generateExcel = async (items: MatchedItem[]): Promise<Blob> => {
         // Add image to cell
         worksheet.addImage(imageId, {
           tl: { col: 0, row: rowNumber - 1 }, // top-left corner (0-indexed for positioning)
-          ext: { width: 120, height: 120 },
+          ext: { width: 240, height: 240 },
           editAs: "oneCell",
         });
       } catch (error) {
