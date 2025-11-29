@@ -19,8 +19,11 @@ const normCol = (colName: string): string => {
 };
 
 const cleanCode = (val: any): string => {
-  const s = String(val).replace(/\D/g, "");
-  return s.slice(0, 10);
+  // Keep alphanumeric characters, convert to uppercase for case-insensitive matching
+  const s = String(val)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+  return s;
 };
 
 export const loadPriceFile = async (file: File): Promise<PriceData[]> => {
