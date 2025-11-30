@@ -96,12 +96,15 @@ export const loadPriceFile = async (file: File): Promise<PriceData[]> => {
           const row = jsonData[i];
           if (!row || row.length === 0) continue;
 
-          const code = row[codeCol];
+          let code = row[codeCol];
           const desc = row[descCol];
           let price = row[priceCol];
           let stock = row[stockCol];
 
           if (!code) continue;
+          
+          // Trim whitespace from code
+          code = String(code).trim();
 
           // Clean price if it's a string
           if (typeof price === "string") {
@@ -116,10 +119,10 @@ export const loadPriceFile = async (file: File): Promise<PriceData[]> => {
           }
 
           results.push({
-            CODE: String(code),
+            CODE: code,
             DESCRIPTION: String(desc || ""),
             PRICE_A_INCL: isNaN(price) ? "" : price,
-            ON_HAND_STOCK: isNaN(stock) ? "" : stock,
+            ON_HAND_STOCK: isNaN(stock) ? 0 : stock,
           });
         }
 
@@ -146,6 +149,8 @@ export const matchPhotosToPrice = (
       priceMap[cleanedCode] = item;
     }
   });
+  
+  console.log("Price map keys:", Object.keys(priceMap).slice(0, 10));
 
   // Match photos
   const matched: MatchedItem[] = [];
@@ -156,9 +161,11 @@ export const matchPhotosToPrice = (
     const codeFromFilename = cleanCode(nameWithoutExt);
     const priceInfo = priceMap[codeFromFilename];
 
+    console.log(`Photo: ${photo.name} -> Cleaned: ${codeFromFilename} -> Matched: ${!!priceInfo}${priceInfo ? ` (Stock: ${priceInfo.ON_HAND_STOCK})` : ''}`);
+
     if (priceInfo) {
       matched.push({
-        CODE: codeFromFilename,
+        CODE: priceInfo.CODE,
         DESCRIPTION: priceInfo.DESCRIPTION,
         PRICE_A_INCL: priceInfo.PRICE_A_INCL,
         ON_HAND_STOCK: priceInfo.ON_HAND_STOCK,
@@ -170,7 +177,7 @@ export const matchPhotosToPrice = (
         CODE: codeFromFilename,
         DESCRIPTION: "",
         PRICE_A_INCL: "",
-        ON_HAND_STOCK: "",
+        ON_HAND_STOCK: 0,
         photoFile: photo,
         photoUrl: URL.createObjectURL(photo),
       });
