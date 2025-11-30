@@ -131,7 +131,9 @@ export const matchPhotosToPrice = (
   const matched: MatchedItem[] = [];
 
   photoFiles.forEach((photo) => {
-    const codeFromFilename = cleanCode(photo.name);
+    // Remove file extension before cleaning
+    const nameWithoutExt = photo.name.replace(/\.[^/.]+$/, "");
+    const codeFromFilename = cleanCode(nameWithoutExt);
     const priceInfo = priceMap[codeFromFilename];
 
     if (priceInfo) {
