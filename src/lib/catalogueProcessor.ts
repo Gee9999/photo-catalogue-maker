@@ -145,12 +145,22 @@ export const matchPhotosToPrice = (
   const priceMap: Record<string, PriceData> = {};
   priceData.forEach((item) => {
     const cleanedCode = cleanCode(item.CODE);
-    if (cleanedCode && !priceMap[cleanedCode]) {
+
+    if (!cleanedCode) return;
+
+    // Map full cleaned code (e.g. 8610100008N)
+    if (!priceMap[cleanedCode]) {
       priceMap[cleanedCode] = item;
+    }
+
+    // Also map numeric prefix so filenames like "8610100008-..." still match
+    const numericPrefix = cleanedCode.match(/^\d+/)?.[0];
+    if (numericPrefix && !priceMap[numericPrefix]) {
+      priceMap[numericPrefix] = item;
     }
   });
   
-  console.log("Price map keys:", Object.keys(priceMap).slice(0, 10));
+  console.log("Price map sample keys:", Object.keys(priceMap).slice(0, 20));
 
   // Match photos
   const matched: MatchedItem[] = [];
@@ -159,8 +169,8 @@ export const matchPhotosToPrice = (
     // Remove file extension before cleaning
     const nameWithoutExt = photo.name.replace(/\.[^/.]+$/, "");
     
-    // Extract just the code portion (before any dash, underscore, or space)
-    const codePortion = nameWithoutExt.split(/[-_\s]/)[0];
+    // Extract just the code portion (before any dash, underscore, ampersand, or space)
+    const codePortion = nameWithoutExt.split(/[&\-\s_]/)[0];
     const codeFromFilename = cleanCode(codePortion);
     const priceInfo = priceMap[codeFromFilename];
 
