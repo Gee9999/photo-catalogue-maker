@@ -75,15 +75,17 @@ export const generateExcel = async (items: MatchedItem[]): Promise<Blob> => {
     worksheet.getRow(rowNumber).height = 180;
 
     // Add text data
-    worksheet.addRow({
-      photo: "", // Leave empty, we'll add image
-      code: item.CODE,
-      description: item.DESCRIPTION || "—",
-      price:
-        item.PRICE_A_INCL !== "" && item.PRICE_A_INCL !== null
-          ? `R ${Number(item.PRICE_A_INCL).toFixed(2)}`
-          : "—",
-    });
+    const row = worksheet.getRow(rowNumber);
+    row.getCell(1).value = ""; // Photo column
+    row.getCell(2).value = item.CODE;
+    row.getCell(3).value = item.DESCRIPTION || "—";
+    row.getCell(4).value = 
+      item.PRICE_A_INCL !== "" && item.PRICE_A_INCL !== null
+        ? `R ${Number(item.PRICE_A_INCL).toFixed(2)}`
+        : "—";
+
+    // Center align all cells in this row
+    row.alignment = { vertical: "middle", horizontal: "left" };
 
     // Add image if available
     if (item.photoFile) {
@@ -98,9 +100,9 @@ export const generateExcel = async (items: MatchedItem[]): Promise<Blob> => {
           extension: "jpeg",
         });
 
-        // Add image to cell
+        // Add image to cell (row is 0-indexed for positioning)
         worksheet.addImage(imageId, {
-          tl: { col: 0, row: rowNumber - 1 }, // top-left corner (0-indexed for positioning)
+          tl: { col: 0, row: rowNumber - 1 },
           ext: { width: 240, height: 240 },
           editAs: "oneCell",
         });
@@ -109,8 +111,7 @@ export const generateExcel = async (items: MatchedItem[]): Promise<Blob> => {
       }
     }
 
-    // Center align all cells in this row
-    worksheet.getRow(rowNumber).alignment = { vertical: "middle", horizontal: "left" };
+    row.commit();
   }
 
   // Generate Excel file
