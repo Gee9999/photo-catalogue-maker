@@ -82,8 +82,11 @@ const Index = () => {
         const stock = typeof item.ON_HAND_STOCK === "number" 
           ? item.ON_HAND_STOCK 
           : parseFloat(String(item.ON_HAND_STOCK)) || 0;
+        console.log(`Item ${item.CODE}: stock=${stock}, minStock=${minStock}, passes=${stock >= minStock}`);
         return stock >= minStock;
       });
+      
+      console.log(`Total matched: ${matched.length}, After stock filter (>=${minStock}): ${filtered.length}`);
       
       setMatchedItems(filtered);
 
