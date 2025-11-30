@@ -158,10 +158,13 @@ export const matchPhotosToPrice = (
   photoFiles.forEach((photo) => {
     // Remove file extension before cleaning
     const nameWithoutExt = photo.name.replace(/\.[^/.]+$/, "");
-    const codeFromFilename = cleanCode(nameWithoutExt);
+    
+    // Extract just the code portion (before any dash, underscore, or space)
+    const codePortion = nameWithoutExt.split(/[-_\s]/)[0];
+    const codeFromFilename = cleanCode(codePortion);
     const priceInfo = priceMap[codeFromFilename];
 
-    console.log(`Photo: ${photo.name} -> Cleaned: ${codeFromFilename} -> Matched: ${!!priceInfo}${priceInfo ? ` (Stock: ${priceInfo.ON_HAND_STOCK})` : ''}`);
+    console.log(`Photo: ${photo.name} -> Extracted: ${codePortion} -> Cleaned: ${codeFromFilename} -> Matched: ${!!priceInfo}${priceInfo ? ` (Stock: ${priceInfo.ON_HAND_STOCK})` : ''}`);
 
     if (priceInfo) {
       matched.push({
