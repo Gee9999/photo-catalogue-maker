@@ -19,6 +19,7 @@ const Index = () => {
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [matchedItems, setMatchedItems] = useState<MatchedItem[]>([]);
+  const [minStock, setMinStock] = useState<number>(0);
   const { toast } = useToast();
 
   const handlePriceFileAccepted = (files: File[]) => {
@@ -75,11 +76,20 @@ const Index = () => {
     try {
       const priceData: PriceData[] = await loadPriceFile(priceFile);
       const matched = matchPhotosToPrice(photoFiles, priceData);
-      setMatchedItems(matched);
+      
+      // Filter by minimum stock
+      const filtered = matched.filter((item) => {
+        const stock = typeof item.ON_HAND_STOCK === "number" 
+          ? item.ON_HAND_STOCK 
+          : parseFloat(String(item.ON_HAND_STOCK)) || 0;
+        return stock >= minStock;
+      });
+      
+      setMatchedItems(filtered);
 
       toast({
         title: "Processing complete!",
-        description: `Matched ${matched.length} items`,
+        description: `Matched ${filtered.length} items with stock >= ${minStock}`,
       });
     } catch (error) {
       toast({
@@ -198,6 +208,31 @@ const Index = () => {
           </Card>
         </div>
 
+        {/* Stock Filter */}
+        <Card className="p-6 bg-gradient-to-br from-card to-card/80 shadow-lg mb-8">
+          <div className="max-w-md mx-auto space-y-4">
+            <label className="block">
+              <span className="text-sm font-semibold mb-2 block">
+                Minimum On-Hand Stock Filter
+              </span>
+              <span className="text-sm text-muted-foreground mb-3 block">
+                Only include items with stock equal to or above this threshold. Set to 0 to exclude negative stock items.
+              </span>
+              <input
+                type="number"
+                value={minStock}
+                onChange={(e) => setMinStock(Number(e.target.value))}
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Enter minimum stock quantity"
+                min="0"
+              />
+            </label>
+            <p className="text-xs text-muted-foreground">
+              Examples: 0 = exclude negative stock, 10 = only items with 10+ units, 20 = only items with 20+ units
+            </p>
+          </div>
+        </Card>
+
         {/* Process Button */}
         <div className="flex justify-center mb-8">
           <Button
@@ -231,6 +266,7 @@ const Index = () => {
                         <th className="px-4 py-3 text-left text-sm font-semibold">Code</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold">Description</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold">Price</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold">Stock</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -250,6 +286,11 @@ const Index = () => {
                           <td className="px-4 py-3 text-sm">
                             {item.PRICE_A_INCL !== "" && item.PRICE_A_INCL !== null
                               ? `R ${Number(item.PRICE_A_INCL).toFixed(2)}`
+                              : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {item.ON_HAND_STOCK !== "" && item.ON_HAND_STOCK !== null
+                              ? Number(item.ON_HAND_STOCK).toFixed(0)
                               : "—"}
                           </td>
                         </tr>
