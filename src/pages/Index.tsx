@@ -75,24 +75,28 @@ const Index = () => {
 
     try {
       const priceData: PriceData[] = await loadPriceFile(priceFile);
-      const matched = matchPhotosToPrice(photoFiles, priceData);
       
-      // Filter by minimum stock
-      const filtered = matched.filter((item) => {
+      // Filter by minimum stock FIRST
+      const filteredByStock = priceData.filter((item) => {
         const stock = typeof item.ON_HAND_STOCK === "number" 
           ? item.ON_HAND_STOCK 
           : parseFloat(String(item.ON_HAND_STOCK)) || 0;
-        console.log(`Item ${item.CODE}: stock=${stock}, minStock=${minStock}, passes=${stock >= minStock}`);
         return stock >= minStock;
       });
       
-      console.log(`Total matched: ${matched.length}, After stock filter (>=${minStock}): ${filtered.length}`);
+      console.log(`Total Excel items: ${priceData.length}, After stock filter (>=${minStock}): ${filteredByStock.length}`);
       
-      setMatchedItems(filtered);
+      // Match photos to the filtered items (includes items without photos)
+      const matched = matchPhotosToPrice(photoFiles, filteredByStock);
+      
+      setMatchedItems(matched);
+
+      const withPhotos = matched.filter(m => m.photoFile).length;
+      const withoutPhotos = matched.filter(m => !m.photoFile).length;
 
       toast({
         title: "Processing complete!",
-        description: `Matched ${filtered.length} items with stock >= ${minStock}`,
+        description: `${matched.length} items with stock ≥ ${minStock} (${withPhotos} with photos, ${withoutPhotos} without photos)`,
       });
     } catch (error) {
       toast({
