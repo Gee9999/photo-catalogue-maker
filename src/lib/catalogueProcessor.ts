@@ -4,12 +4,14 @@ export interface PriceData {
   CODE: string;
   DESCRIPTION: string;
   PRICE_A_INCL: number | string;
+  ON_HAND_STOCK: number | string;
 }
 
 export interface MatchedItem {
   CODE: string;
   DESCRIPTION: string;
   PRICE_A_INCL: number | string;
+  ON_HAND_STOCK: number | string;
   photoFile?: File;
   photoUrl?: string;
 }
@@ -78,6 +80,16 @@ export const loadPriceFile = async (file: File): Promise<PriceData[]> => {
           return;
         }
 
+        let stockCol = null;
+        for (const target of ["ONHANDSTOCK", "ONHAND", "STOCK", "ONHANDSTOCKQTY"]) {
+          stockCol = findCol(target);
+          if (stockCol !== null) break;
+        }
+        if (stockCol === null) {
+          reject(new Error("Could not find ON-HAND STOCK column in Excel (typically column K)"));
+          return;
+        }
+
         const results: PriceData[] = [];
 
         for (let i = 1; i < jsonData.length; i++) {
@@ -87,6 +99,7 @@ export const loadPriceFile = async (file: File): Promise<PriceData[]> => {
           const code = row[codeCol];
           const desc = row[descCol];
           let price = row[priceCol];
+          let stock = row[stockCol];
 
           if (!code) continue;
 
@@ -96,10 +109,17 @@ export const loadPriceFile = async (file: File): Promise<PriceData[]> => {
             price = parseFloat(price);
           }
 
+          // Clean stock if it's a string
+          if (typeof stock === "string") {
+            stock = stock.replace(/,/g, "").trim();
+            stock = parseFloat(stock);
+          }
+
           results.push({
             CODE: String(code),
             DESCRIPTION: String(desc || ""),
             PRICE_A_INCL: isNaN(price) ? "" : price,
+            ON_HAND_STOCK: isNaN(stock) ? "" : stock,
           });
         }
 
@@ -141,6 +161,7 @@ export const matchPhotosToPrice = (
         CODE: codeFromFilename,
         DESCRIPTION: priceInfo.DESCRIPTION,
         PRICE_A_INCL: priceInfo.PRICE_A_INCL,
+        ON_HAND_STOCK: priceInfo.ON_HAND_STOCK,
         photoFile: photo,
         photoUrl: URL.createObjectURL(photo),
       });
@@ -149,6 +170,7 @@ export const matchPhotosToPrice = (
         CODE: codeFromFilename,
         DESCRIPTION: "",
         PRICE_A_INCL: "",
+        ON_HAND_STOCK: "",
         photoFile: photo,
         photoUrl: URL.createObjectURL(photo),
       });
