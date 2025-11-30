@@ -159,7 +159,7 @@ export const matchPhotosToPrice = (
   
   console.log("Photo map sample keys:", Object.keys(photoMap).slice(0, 20));
 
-  // Create matched items for ALL price data (photos optional)
+  // Create matched items only for price data that have photos
   const matched: MatchedItem[] = [];
 
   priceData.forEach((item) => {
@@ -181,17 +181,11 @@ export const matchPhotosToPrice = (
         photoUrl: URL.createObjectURL(photo),
       });
     } else {
-      console.log(`Item ${item.CODE}: No photo (Stock: ${item.ON_HAND_STOCK})`);
-      matched.push({
-        CODE: item.CODE,
-        DESCRIPTION: item.DESCRIPTION,
-        PRICE_A_INCL: item.PRICE_A_INCL,
-        ON_HAND_STOCK: item.ON_HAND_STOCK,
-      });
+      console.log(`Item ${item.CODE}: No photo, skipped (Stock: ${item.ON_HAND_STOCK})`);
     }
   });
 
-  console.log(`Total items processed: ${matched.length}, With photos: ${matched.filter(m => m.photoFile).length}, Without photos: ${matched.filter(m => !m.photoFile).length}`);
+  console.log(`Total Excel items: ${priceData.length}, With photos: ${matched.length}, Without photos: ${priceData.length - matched.length}`);
 
   return matched;
 };
