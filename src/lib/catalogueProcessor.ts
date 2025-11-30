@@ -141,30 +141,9 @@ export const matchPhotosToPrice = (
   photoFiles: File[],
   priceData: PriceData[]
 ): MatchedItem[] => {
-  // Build lookup map
-  const priceMap: Record<string, PriceData> = {};
-  priceData.forEach((item) => {
-    const cleanedCode = cleanCode(item.CODE);
-
-    if (!cleanedCode) return;
-
-    // Map full cleaned code (e.g. 8610100008N)
-    if (!priceMap[cleanedCode]) {
-      priceMap[cleanedCode] = item;
-    }
-
-    // Also map numeric prefix so filenames like "8610100008-..." still match
-    const numericPrefix = cleanedCode.match(/^\d+/)?.[0];
-    if (numericPrefix && !priceMap[numericPrefix]) {
-      priceMap[numericPrefix] = item;
-    }
-  });
+  // Build photo lookup map by code
+  const photoMap: Record<string, File> = {};
   
-  console.log("Price map sample keys:", Object.keys(priceMap).slice(0, 20));
-
-  // Match photos
-  const matched: MatchedItem[] = [];
-
   photoFiles.forEach((photo) => {
     // Remove file extension before cleaning
     const nameWithoutExt = photo.name.replace(/\.[^/.]+$/, "");
@@ -172,30 +151,47 @@ export const matchPhotosToPrice = (
     // Extract just the code portion (before any dash, underscore, ampersand, or space)
     const codePortion = nameWithoutExt.split(/[&\-\s_]/)[0];
     const codeFromFilename = cleanCode(codePortion);
-    const priceInfo = priceMap[codeFromFilename];
+    
+    if (codeFromFilename && !photoMap[codeFromFilename]) {
+      photoMap[codeFromFilename] = photo;
+    }
+  });
+  
+  console.log("Photo map sample keys:", Object.keys(photoMap).slice(0, 20));
 
-    console.log(`Photo: ${photo.name} -> Extracted: ${codePortion} -> Cleaned: ${codeFromFilename} -> Matched: ${!!priceInfo}${priceInfo ? ` (Stock: ${priceInfo.ON_HAND_STOCK})` : ''}`);
+  // Create matched items for ALL price data (photos optional)
+  const matched: MatchedItem[] = [];
 
-    if (priceInfo) {
+  priceData.forEach((item) => {
+    const cleanedCode = cleanCode(item.CODE);
+    if (!cleanedCode) return;
+
+    // Check for photo with full code or numeric prefix
+    const numericPrefix = cleanedCode.match(/^\d+/)?.[0];
+    const photo = photoMap[cleanedCode] || (numericPrefix ? photoMap[numericPrefix] : undefined);
+
+    if (photo) {
+      console.log(`Item ${item.CODE}: Matched with photo ${photo.name} (Stock: ${item.ON_HAND_STOCK})`);
       matched.push({
-        CODE: priceInfo.CODE,
-        DESCRIPTION: priceInfo.DESCRIPTION,
-        PRICE_A_INCL: priceInfo.PRICE_A_INCL,
-        ON_HAND_STOCK: priceInfo.ON_HAND_STOCK,
+        CODE: item.CODE,
+        DESCRIPTION: item.DESCRIPTION,
+        PRICE_A_INCL: item.PRICE_A_INCL,
+        ON_HAND_STOCK: item.ON_HAND_STOCK,
         photoFile: photo,
         photoUrl: URL.createObjectURL(photo),
       });
     } else {
+      console.log(`Item ${item.CODE}: No photo (Stock: ${item.ON_HAND_STOCK})`);
       matched.push({
-        CODE: codeFromFilename,
-        DESCRIPTION: "",
-        PRICE_A_INCL: "",
-        ON_HAND_STOCK: 0,
-        photoFile: photo,
-        photoUrl: URL.createObjectURL(photo),
+        CODE: item.CODE,
+        DESCRIPTION: item.DESCRIPTION,
+        PRICE_A_INCL: item.PRICE_A_INCL,
+        ON_HAND_STOCK: item.ON_HAND_STOCK,
       });
     }
   });
+
+  console.log(`Total items processed: ${matched.length}, With photos: ${matched.filter(m => m.photoFile).length}, Without photos: ${matched.filter(m => !m.photoFile).length}`);
 
   return matched;
 };
