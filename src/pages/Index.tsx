@@ -211,49 +211,49 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* Stock Filter */}
+        {/* Stock Filter & Process Button */}
         <Card className="p-6 bg-gradient-to-br from-card to-card/80 shadow-lg mb-8">
-          <div className="max-w-md mx-auto space-y-4">
-            <label className="block">
-              <span className="text-sm font-semibold mb-2 block">
-                Minimum On-Hand Stock Filter
-              </span>
-              <span className="text-sm text-muted-foreground mb-3 block">
-                Only include items with stock equal to or above this threshold. Set to 0 to exclude negative stock items.
-              </span>
-              <input
-                type="number"
-                value={minStock}
-                onChange={(e) => setMinStock(Number(e.target.value))}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="Enter minimum stock quantity"
-                min="0"
-              />
-            </label>
-            <p className="text-xs text-muted-foreground">
-              Examples: 0 = exclude negative stock, 10 = only items with 10+ units, 20 = only items with 20+ units
-            </p>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+            <div className="flex-1 max-w-xs">
+              <label className="block">
+                <span className="text-sm font-semibold mb-2 block">
+                  Minimum Stock Filter
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={minStock}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    setMinStock(val === '' ? 0 : Number(val));
+                  }}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent text-center text-lg font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  placeholder="0"
+                />
+                <span className="text-xs text-muted-foreground mt-1.5 block text-center">
+                  Only show items with {minStock}+ units in stock
+                </span>
+              </label>
+            </div>
+            
+            <Button
+              onClick={handleProcess}
+              disabled={!priceFile || photoFiles.length === 0 || isProcessing}
+              size="lg"
+              className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity text-lg px-8 py-6"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Generate Catalogue"
+              )}
+            </Button>
           </div>
         </Card>
-
-        {/* Process Button */}
-        <div className="flex justify-center mb-8">
-          <Button
-            onClick={handleProcess}
-            disabled={!priceFile || photoFiles.length === 0 || isProcessing}
-            size="lg"
-            className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity text-lg px-8 py-6"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              "Generate Catalogue"
-            )}
-          </Button>
-        </div>
 
         {/* Results Section */}
         {matchedItems.length > 0 && (
