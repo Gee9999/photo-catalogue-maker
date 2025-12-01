@@ -20,6 +20,8 @@ const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [matchedItems, setMatchedItems] = useState<MatchedItem[]>([]);
   const [minStock, setMinStock] = useState<number>(0);
+  const [includeNegativeStock, setIncludeNegativeStock] = useState<boolean>(false);
+  const [maxNegativeStock, setMaxNegativeStock] = useState<number>(0);
   const { toast } = useToast();
 
   const handlePriceFileAccepted = (files: File[]) => {
@@ -76,12 +78,19 @@ const Index = () => {
     try {
       const priceData: PriceData[] = await loadPriceFile(priceFile);
       
-      // Filter by minimum stock FIRST (includes negative stock/oversold items)
+      // Filter by minimum stock and optional negative stock
       const filteredByStock = priceData.filter((item) => {
         const stock = typeof item.ON_HAND_STOCK === "number" 
           ? item.ON_HAND_STOCK 
           : parseFloat(String(item.ON_HAND_STOCK)) || 0;
-        return stock >= minStock || stock < 0;
+        
+        // Include if stock meets minimum positive threshold
+        if (stock >= minStock) return true;
+        
+        // Include if negative stock filter is enabled and stock is below negative threshold
+        if (includeNegativeStock && stock <= -maxNegativeStock) return true;
+        
+        return false;
       });
       
       console.log(`Total Excel items: ${priceData.length}, After stock filter (>=${minStock}): ${filteredByStock.length}`);
@@ -238,6 +247,42 @@ const Index = () => {
                 <span className="text-xs text-muted-foreground mt-1.5 block text-center">
                   Only show items with {minStock}+ units in stock
                 </span>
+              </label>
+            </div>
+
+            <div className="flex-1 max-w-xs">
+              <label className="block">
+                <span className="text-sm font-semibold mb-2 block">
+                  Oversold Items Filter
+                </span>
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={includeNegativeStock}
+                    onChange={(e) => setIncludeNegativeStock(e.target.checked)}
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
+                  />
+                  <span className="text-sm">Include oversold items</span>
+                </div>
+                {includeNegativeStock && (
+                  <>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={maxNegativeStock}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, '');
+                        setMaxNegativeStock(val === '' ? 0 : Number(val));
+                      }}
+                      className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent text-center text-lg font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      placeholder="0"
+                    />
+                    <span className="text-xs text-muted-foreground mt-1.5 block text-center">
+                      Show items with -{maxNegativeStock} or less stock
+                    </span>
+                  </>
+                )}
               </label>
             </div>
             
