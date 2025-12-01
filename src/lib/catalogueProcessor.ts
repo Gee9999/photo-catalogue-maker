@@ -148,9 +148,8 @@ export const matchPhotosToPrice = (
     // Remove file extension before cleaning
     const nameWithoutExt = photo.name.replace(/\.[^/.]+$/, "");
     
-    // Extract just the code portion (before any dash, underscore, ampersand, or space)
-    const codePortion = nameWithoutExt.split(/[&\-\s_]/)[0];
-    const codeFromFilename = cleanCode(codePortion);
+    // Clean the entire filename (not just the portion before dash)
+    const codeFromFilename = cleanCode(nameWithoutExt);
     
     if (codeFromFilename && !photoMap[codeFromFilename]) {
       photoMap[codeFromFilename] = photo;
