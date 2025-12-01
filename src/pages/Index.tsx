@@ -76,12 +76,12 @@ const Index = () => {
     try {
       const priceData: PriceData[] = await loadPriceFile(priceFile);
       
-      // Filter by minimum stock FIRST
+      // Filter by minimum stock FIRST (includes negative stock/oversold items)
       const filteredByStock = priceData.filter((item) => {
         const stock = typeof item.ON_HAND_STOCK === "number" 
           ? item.ON_HAND_STOCK 
           : parseFloat(String(item.ON_HAND_STOCK)) || 0;
-        return stock >= minStock;
+        return stock >= minStock || stock < 0;
       });
       
       console.log(`Total Excel items: ${priceData.length}, After stock filter (>=${minStock}): ${filteredByStock.length}`);
