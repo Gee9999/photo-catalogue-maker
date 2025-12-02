@@ -33,7 +33,7 @@ const PhotoOnlyPdf = () => {
 
     setIsGenerating(true);
     try {
-      const blob = await generatePhotoOnlyPDF(photoFiles);
+      const blob = await generatePhotoOnlyPDF(photoFiles, documentTitle);
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;

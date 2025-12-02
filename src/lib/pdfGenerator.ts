@@ -10,16 +10,17 @@ const loadImage = (url: string): Promise<HTMLImageElement> => {
   });
 };
 
-export const generatePDF = async (items: MatchedItem[]): Promise<Blob> => {
+export const generatePDF = async (items: MatchedItem[], title?: string): Promise<Blob> => {
   const pdf = new jsPDF({
     unit: "mm",
     format: "a4",
   });
 
   // Title
+  const displayTitle = title?.trim() || "Photo Catalogue";
   pdf.setFontSize(18);
   pdf.setFont("helvetica", "bold");
-  pdf.text("Photo Catalogue", 105, 15, { align: "center" });
+  pdf.text(displayTitle, 105, 15, { align: "center" });
 
   const marginX = 10;
   let currentY = 25;
