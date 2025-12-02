@@ -23,6 +23,7 @@ const Index = () => {
   const [minStock, setMinStock] = useState<number>(0);
   const [includeNegativeStock, setIncludeNegativeStock] = useState<boolean>(false);
   const [maxNegativeStock, setMaxNegativeStock] = useState<number>(0);
+  const [documentTitle, setDocumentTitle] = useState<string>("");
   const { toast } = useToast();
 
   const handlePriceFileAccepted = (files: File[]) => {
@@ -133,7 +134,8 @@ const Index = () => {
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "photo_catalogue.pdf";
+      const filename = documentTitle.trim() ? `${documentTitle.trim()}.pdf` : "photo_catalogue.pdf";
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
 
@@ -161,7 +163,8 @@ const Index = () => {
       const url = URL.createObjectURL(excelBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "catalogue.xlsx";
+      const filename = documentTitle.trim() ? `${documentTitle.trim()}.xlsx` : "catalogue.xlsx";
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
 
@@ -233,8 +236,25 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* Stock Filter & Process Button */}
+        {/* Document Title & Stock Filter & Process Button */}
         <Card className="p-6 bg-gradient-to-br from-card to-card/80 shadow-lg mb-8">
+          <div className="mb-6">
+            <label className="block max-w-md mx-auto">
+              <span className="text-sm font-semibold mb-2 block text-center">
+                Document Title
+              </span>
+              <input
+                type="text"
+                value={documentTitle}
+                onChange={(e) => setDocumentTitle(e.target.value)}
+                className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent text-center text-lg"
+                placeholder="Enter catalogue title..."
+              />
+              <span className="text-xs text-muted-foreground mt-1.5 block text-center">
+                Used as filename when downloading
+              </span>
+            </label>
+          </div>
           <div className="flex flex-col md:flex-row items-center justify-center gap-6">
             <div className="flex-1 max-w-xs">
               <label className="block">
