@@ -87,11 +87,11 @@ export const generateExcel = async (items: MatchedItem[]): Promise<Blob> => {
     // Center align all cells in this row
     row.alignment = { vertical: "middle", horizontal: "left" };
 
-    // Add image if available
-    if (item.photoFile) {
+    // Add image if available (use first photo)
+    if (item.photoFiles.length > 0) {
       try {
         // Resize image to 240x240
-        const resizedBlob = await resizeImage(item.photoFile, 240, 240);
+        const resizedBlob = await resizeImage(item.photoFiles[0], 240, 240);
         const arrayBuffer = await resizedBlob.arrayBuffer();
 
         // Add image to workbook

@@ -12,8 +12,8 @@ export interface MatchedItem {
   DESCRIPTION: string;
   PRICE_A_INCL: number | string;
   ON_HAND_STOCK: number | string;
-  photoFile?: File;
-  photoUrl?: string;
+  photoFiles: File[];
+  photoUrls: string[];
 }
 
 const normCol = (colName: string): string => {
@@ -154,8 +154,8 @@ export const matchPhotosToPrice = (
   photoFiles: File[],
   priceData: PriceData[]
 ): MatchedItem[] => {
-  // Build photo lookup map - extract code from part before dash
-  const photoMap: Record<string, File> = {};
+  // Build photo lookup map - extract code from part before dash, collect ALL photos per code
+  const photoMap: Record<string, File[]> = {};
   
   photoFiles.forEach((photo) => {
     const nameWithoutExt = photo.name.replace(/\.[^/.]+$/, "");
@@ -163,8 +163,11 @@ export const matchPhotosToPrice = (
     const codeFromFilename = nameWithoutExt.split("-")[0];
     const cleanedCode = cleanCode(codeFromFilename);
     
-    if (cleanedCode && !photoMap[cleanedCode]) {
-      photoMap[cleanedCode] = photo;
+    if (cleanedCode) {
+      if (!photoMap[cleanedCode]) {
+        photoMap[cleanedCode] = [];
+      }
+      photoMap[cleanedCode].push(photo);
     }
   });
   
@@ -177,17 +180,17 @@ export const matchPhotosToPrice = (
     const cleanedCode = cleanCode(item.CODE);
     if (!cleanedCode) return;
 
-    const photo = photoMap[cleanedCode];
+    const photos = photoMap[cleanedCode];
 
-    if (photo) {
-      console.log(`Item ${item.CODE}: Matched with photo ${photo.name} (Stock: ${item.ON_HAND_STOCK})`);
+    if (photos && photos.length > 0) {
+      console.log(`Item ${item.CODE}: Matched with ${photos.length} photo(s) (Stock: ${item.ON_HAND_STOCK})`);
       matched.push({
         CODE: item.CODE,
         DESCRIPTION: item.DESCRIPTION,
         PRICE_A_INCL: item.PRICE_A_INCL,
         ON_HAND_STOCK: item.ON_HAND_STOCK,
-        photoFile: photo,
-        photoUrl: URL.createObjectURL(photo),
+        photoFiles: photos,
+        photoUrls: photos.map(p => URL.createObjectURL(p)),
       });
     } else {
       console.log(`Item ${item.CODE}: No photo, skipped (Stock: ${item.ON_HAND_STOCK})`);
