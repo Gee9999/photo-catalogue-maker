@@ -154,21 +154,43 @@ export const matchPhotosToPrice = (
   photoFiles: File[],
   priceData: PriceData[]
 ): MatchedItem[] => {
-  // Build photo lookup map - extract code from part before dash, collect ALL photos per code
+  // Build a set of all Excel codes for lookup
+  const excelCodeSet = new Set<string>();
+  priceData.forEach((item) => {
+    const cleaned = cleanCode(item.CODE);
+    if (cleaned) excelCodeSet.add(cleaned);
+  });
+
+  // Helper: strip trailing letters from code (e.g., "8610100024N" -> "8610100024")
+  const stripTrailingLetters = (code: string): string => {
+    return code.replace(/[A-Z]+$/, "");
+  };
+
+  // Build photo lookup map - extract code from part before dash
+  // If exact code doesn't exist in Excel, try base code without trailing letters
   const photoMap: Record<string, File[]> = {};
   
   photoFiles.forEach((photo) => {
     const nameWithoutExt = photo.name.replace(/\.[^/.]+$/, "");
     // Get part before dash, or full name if no dash
     const codeFromFilename = nameWithoutExt.split("-")[0];
-    const cleanedCode = cleanCode(codeFromFilename);
+    let cleanedCode = cleanCode(codeFromFilename);
     
-    if (cleanedCode) {
-      if (!photoMap[cleanedCode]) {
-        photoMap[cleanedCode] = [];
+    if (!cleanedCode) return;
+
+    // Check if exact code exists in Excel
+    if (!excelCodeSet.has(cleanedCode)) {
+      // Try stripping trailing letters (e.g., 24N -> 24, 24G -> 24)
+      const baseCode = stripTrailingLetters(cleanedCode);
+      if (baseCode && excelCodeSet.has(baseCode)) {
+        cleanedCode = baseCode;
       }
-      photoMap[cleanedCode].push(photo);
     }
+    
+    if (!photoMap[cleanedCode]) {
+      photoMap[cleanedCode] = [];
+    }
+    photoMap[cleanedCode].push(photo);
   });
   
   console.log("Photo map sample keys:", Object.keys(photoMap).slice(0, 20));
