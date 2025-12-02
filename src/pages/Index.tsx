@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { FileUploadZone } from "@/components/FileUploadZone";
 import { FilePreview } from "@/components/FilePreview";
 import { Button } from "@/components/ui/button";
@@ -191,6 +192,9 @@ const Index = () => {
             Upload your price Excel and product photos. We'll automatically match them and generate
             a professional PDF catalogue and Excel file.
           </p>
+          <Link to="/photo-only" className="inline-flex items-center gap-2 text-primary hover:underline">
+            Or use Photo Only PDF (no price matching)
+          </Link>
         </div>
 
         {/* Upload Section */}
