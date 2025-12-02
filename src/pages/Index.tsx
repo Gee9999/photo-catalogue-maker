@@ -87,13 +87,18 @@ const Index = () => {
         // Include if stock meets minimum positive threshold
         if (stock >= minStock) return true;
         
-        // Include if negative stock filter is enabled and stock is below negative threshold
-        if (includeNegativeStock && stock <= -maxNegativeStock) return true;
+        // Include negative stock items if enabled
+        if (includeNegativeStock && stock < 0) {
+          // If maxNegativeStock is 0, include all negative items
+          // Otherwise, only include items with stock >= -maxNegativeStock
+          if (maxNegativeStock === 0 || stock >= -maxNegativeStock) return true;
+        }
         
         return false;
       });
       
-      console.log(`Total Excel items: ${priceData.length}, After stock filter (>=${minStock}): ${filteredByStock.length}`);
+      const negativeCount = filteredByStock.filter(i => (typeof i.ON_HAND_STOCK === "number" ? i.ON_HAND_STOCK : parseFloat(String(i.ON_HAND_STOCK)) || 0) < 0).length;
+      console.log(`Total Excel items: ${priceData.length}, After stock filter: ${filteredByStock.length} (${negativeCount} negative stock items)`);
       
       // Match photos to the filtered items (includes items without photos)
       const matched = matchPhotosToPrice(photoFiles, filteredByStock);
