@@ -154,46 +154,74 @@ export const matchPhotosToPrice = (
   photoFiles: File[],
   priceData: PriceData[]
 ): MatchedItem[] => {
-  // Build a set of all Excel codes for lookup
+  // Build maps for Excel codes - both exact and base (without suffix) codes
   const excelCodeSet = new Set<string>();
+  const baseCodeToExcelCodes = new Map<string, string[]>();
+  
   priceData.forEach((item) => {
     const cleaned = cleanCode(item.CODE);
-    if (cleaned) excelCodeSet.add(cleaned);
+    if (!cleaned) return;
+    excelCodeSet.add(cleaned);
+    
+    // Also store base code (without trailing letters) mapping to full codes
+    const baseCode = cleaned.replace(/[A-Z]+$/, "");
+    if (baseCode && baseCode !== cleaned) {
+      if (!baseCodeToExcelCodes.has(baseCode)) {
+        baseCodeToExcelCodes.set(baseCode, []);
+      }
+      baseCodeToExcelCodes.get(baseCode)!.push(cleaned);
+    }
   });
 
-  // Helper: strip trailing letters from code (e.g., "8610100024N" -> "8610100024")
-  const stripTrailingLetters = (code: string): string => {
-    return code.replace(/[A-Z]+$/, "");
-  };
-
   // Build photo lookup map - extract code from part before dash
-  // If exact code doesn't exist in Excel, try base code without trailing letters
+  // Handle underscore-separated multi-code photos too
   const photoMap: Record<string, File[]> = {};
   
   photoFiles.forEach((photo) => {
     const nameWithoutExt = photo.name.replace(/\.[^/.]+$/, "");
     // Get part before dash, or full name if no dash
     const codeFromFilename = nameWithoutExt.split("-")[0];
-    let cleanedCode = cleanCode(codeFromFilename);
     
-    if (!cleanedCode) return;
+    // Check if it contains underscores (multiple codes in one photo)
+    const potentialCodes = codeFromFilename.includes("_") 
+      ? codeFromFilename.split("_") 
+      : [codeFromFilename];
+    
+    potentialCodes.forEach((code) => {
+      let cleanedCode = cleanCode(code);
+      if (!cleanedCode) return;
 
-    // Check if exact code exists in Excel
-    if (!excelCodeSet.has(cleanedCode)) {
-      // Try stripping trailing letters (e.g., 24N -> 24, 24G -> 24)
-      const baseCode = stripTrailingLetters(cleanedCode);
-      if (baseCode && excelCodeSet.has(baseCode)) {
-        cleanedCode = baseCode;
+      // Try to find matching Excel code:
+      // 1. Exact match
+      // 2. Photo code matches base of Excel code (e.g., photo "8610100021" matches Excel "8610100021S")
+      // 3. Photo code with stripped letters matches Excel (e.g., photo "8610100024N" matches Excel "8610100024")
+      
+      let targetCode = cleanedCode;
+      
+      if (!excelCodeSet.has(cleanedCode)) {
+        // Check if photo code is a base code for any Excel codes with suffixes
+        if (baseCodeToExcelCodes.has(cleanedCode)) {
+          // Use the first matching Excel code with suffix
+          targetCode = baseCodeToExcelCodes.get(cleanedCode)![0];
+          console.log(`Photo ${photo.name}: code ${cleanedCode} matched to Excel ${targetCode}`);
+        } else {
+          // Try stripping trailing letters from photo code
+          const strippedCode = cleanedCode.replace(/[A-Z]+$/, "");
+          if (strippedCode && excelCodeSet.has(strippedCode)) {
+            targetCode = strippedCode;
+          }
+        }
       }
-    }
-    
-    if (!photoMap[cleanedCode]) {
-      photoMap[cleanedCode] = [];
-    }
-    photoMap[cleanedCode].push(photo);
+      
+      if (!photoMap[targetCode]) {
+        photoMap[targetCode] = [];
+      }
+      photoMap[targetCode].push(photo);
+    });
   });
   
-  console.log("Photo map sample keys:", Object.keys(photoMap).slice(0, 20));
+  console.log("Photo map keys:", Object.keys(photoMap));
+  console.log("Sample Excel codes:", Array.from(excelCodeSet).slice(0, 20));
 
   // Create matched items only for price data that have photos
   const matched: MatchedItem[] = [];
@@ -205,7 +233,7 @@ export const matchPhotosToPrice = (
     const photos = photoMap[cleanedCode];
 
     if (photos && photos.length > 0) {
-      console.log(`Item ${item.CODE}: Matched with ${photos.length} photo(s) (Stock: ${item.ON_HAND_STOCK})`);
+      console.log(`Item ${item.CODE}: Matched with ${photos.length} photo(s)`);
       matched.push({
         CODE: item.CODE,
         DESCRIPTION: item.DESCRIPTION,
@@ -214,12 +242,10 @@ export const matchPhotosToPrice = (
         photoFiles: photos,
         photoUrls: photos.map(p => URL.createObjectURL(p)),
       });
-    } else {
-      console.log(`Item ${item.CODE}: No photo, skipped (Stock: ${item.ON_HAND_STOCK})`);
     }
   });
 
-  console.log(`Total Excel items: ${priceData.length}, With photos: ${matched.length}, Without photos: ${priceData.length - matched.length}`);
+  console.log(`Total Excel items: ${priceData.length}, With photos: ${matched.length}`);
 
   return matched;
 };
