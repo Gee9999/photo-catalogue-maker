@@ -58,9 +58,10 @@ export const loadPriceFile = async (file: File): Promise<PriceData[]> => {
           return null;
         };
 
-        const codeCol = findCol("CODE");
+        const codeCol = findCol("CODE") ?? findCol("ITEMCODE") ?? findCol("PRODUCTCODE") ?? findCol("STOCKCODE");
         if (codeCol === null) {
-          reject(new Error("Could not find CODE column in Excel"));
+          const foundColumns = headers.map((h: any) => String(h)).join(", ");
+          reject(new Error(`Could not find CODE column in Excel. Found columns: ${foundColumns}`));
           return;
         }
 
