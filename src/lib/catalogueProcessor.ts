@@ -154,22 +154,18 @@ export const matchPhotosToPrice = (
   photoFiles: File[],
   priceData: PriceData[]
 ): MatchedItem[] => {
-  // Build photo lookup map by code
-  const photoMap: Record<string, File> = {};
+  // Build arrays of photo info for prefix matching
+  const photoList: { cleanedName: string; file: File }[] = [];
   
   photoFiles.forEach((photo) => {
-    // Remove file extension before cleaning
     const nameWithoutExt = photo.name.replace(/\.[^/.]+$/, "");
-    
-    // Clean the entire filename (not just the portion before dash)
-    const codeFromFilename = cleanCode(nameWithoutExt);
-    
-    if (codeFromFilename && !photoMap[codeFromFilename]) {
-      photoMap[codeFromFilename] = photo;
+    const cleanedName = cleanCode(nameWithoutExt);
+    if (cleanedName) {
+      photoList.push({ cleanedName, file: photo });
     }
   });
   
-  console.log("Photo map sample keys:", Object.keys(photoMap).slice(0, 20));
+  console.log("Photo names sample:", photoList.slice(0, 20).map(p => p.cleanedName));
 
   // Create matched items only for price data that have photos
   const matched: MatchedItem[] = [];
@@ -178,19 +174,18 @@ export const matchPhotosToPrice = (
     const cleanedCode = cleanCode(item.CODE);
     if (!cleanedCode) return;
 
-    // Check for photo with full code or numeric prefix
-    const numericPrefix = cleanedCode.match(/^\d+/)?.[0];
-    const photo = photoMap[cleanedCode] || (numericPrefix ? photoMap[numericPrefix] : undefined);
+    // Find photo that starts with the product code (prefix match)
+    const matchedPhoto = photoList.find(p => p.cleanedName.startsWith(cleanedCode));
 
-    if (photo) {
-      console.log(`Item ${item.CODE}: Matched with photo ${photo.name} (Stock: ${item.ON_HAND_STOCK})`);
+    if (matchedPhoto) {
+      console.log(`Item ${item.CODE}: Matched with photo ${matchedPhoto.file.name} (Stock: ${item.ON_HAND_STOCK})`);
       matched.push({
         CODE: item.CODE,
         DESCRIPTION: item.DESCRIPTION,
         PRICE_A_INCL: item.PRICE_A_INCL,
         ON_HAND_STOCK: item.ON_HAND_STOCK,
-        photoFile: photo,
-        photoUrl: URL.createObjectURL(photo),
+        photoFile: matchedPhoto.file,
+        photoUrl: URL.createObjectURL(matchedPhoto.file),
       });
     } else {
       console.log(`Item ${item.CODE}: No photo, skipped (Stock: ${item.ON_HAND_STOCK})`);
