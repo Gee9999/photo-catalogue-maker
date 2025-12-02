@@ -45,7 +45,19 @@ export const loadPriceFile = async (file: File): Promise<PriceData[]> => {
           return;
         }
 
-        const headers = jsonData[0];
+        // Find the header row by looking for a row that contains "CODE" or similar
+        let headerRowIndex = 0;
+        for (let i = 0; i < Math.min(20, jsonData.length); i++) {
+          const row = jsonData[i];
+          if (!row) continue;
+          const rowStr = row.map((cell: any) => normCol(String(cell || ""))).join(",");
+          if (rowStr.includes("CODE") || rowStr.includes("ITEMCODE") || rowStr.includes("STOCKCODE")) {
+            headerRowIndex = i;
+            break;
+          }
+        }
+
+        const headers = jsonData[headerRowIndex];
         const normMap: Record<string, string> = {};
         headers.forEach((header: any, idx: number) => {
           normMap[idx] = normCol(String(header));
@@ -93,7 +105,7 @@ export const loadPriceFile = async (file: File): Promise<PriceData[]> => {
 
         const results: PriceData[] = [];
 
-        for (let i = 1; i < jsonData.length; i++) {
+        for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
           const row = jsonData[i];
           if (!row || row.length === 0) continue;
 
