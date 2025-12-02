@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 const PhotoOnlyPdf = () => {
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [documentTitle, setDocumentTitle] = useState<string>("");
   const { toast } = useToast();
 
   const handlePhotoFilesAccepted = (files: File[]) => {
@@ -36,7 +37,8 @@ const PhotoOnlyPdf = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "photo-catalogue.pdf";
+      const filename = documentTitle.trim() ? `${documentTitle.trim()}.pdf` : "photo-catalogue.pdf";
+      link.download = filename;
       link.click();
       URL.revokeObjectURL(url);
 
@@ -74,6 +76,24 @@ const PhotoOnlyPdf = () => {
         </header>
 
         <div className="space-y-8">
+          <div className="max-w-md mx-auto">
+            <label className="block">
+              <span className="text-sm font-semibold mb-2 block text-center">
+                Document Title
+              </span>
+              <input
+                type="text"
+                value={documentTitle}
+                onChange={(e) => setDocumentTitle(e.target.value)}
+                className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent text-center text-lg"
+                placeholder="Enter catalogue title..."
+              />
+              <span className="text-xs text-muted-foreground mt-1.5 block text-center">
+                Used as filename when downloading
+              </span>
+            </label>
+          </div>
+
           <div>
             <FileUploadZone
               onFilesAccepted={handlePhotoFilesAccepted}
