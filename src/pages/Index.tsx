@@ -130,7 +130,7 @@ const Index = () => {
 
     setIsProcessing(true);
     try {
-      const pdfBlob = await generatePDF(matchedItems);
+      const pdfBlob = await generatePDF(matchedItems, documentTitle);
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement("a");
       a.href = url;
