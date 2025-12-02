@@ -100,12 +100,12 @@ const Index = () => {
       
       setMatchedItems(matched);
 
-      const withPhotos = matched.filter(m => m.photoFile).length;
-      const withoutPhotos = matched.filter(m => !m.photoFile).length;
+      const withPhotos = matched.filter(m => m.photoFiles.length > 0).length;
+      const totalPhotos = matched.reduce((sum, m) => sum + m.photoFiles.length, 0);
 
       toast({
         title: "Processing complete!",
-        description: `${matched.length} items with stock ≥ ${minStock} (${withPhotos} with photos, ${withoutPhotos} without photos)`,
+        description: `${matched.length} items with stock ≥ ${minStock} (${withPhotos} items, ${totalPhotos} total photos)`,
       });
     } catch (error) {
       toast({
@@ -325,12 +325,20 @@ const Index = () => {
                       {matchedItems.map((item, index) => (
                         <tr key={index} className="hover:bg-muted/30 transition-colors">
                           <td className="px-4 py-3">
-                            {item.photoUrl && (
-                              <img
-                                src={item.photoUrl}
-                                alt={item.CODE}
-                                className="h-12 w-12 object-cover rounded"
-                              />
+                            {item.photoUrls.length > 0 && (
+                              <div className="flex gap-1">
+                                {item.photoUrls.slice(0, 3).map((url, i) => (
+                                  <img
+                                    key={i}
+                                    src={url}
+                                    alt={`${item.CODE}-${i}`}
+                                    className="h-12 w-12 object-cover rounded"
+                                  />
+                                ))}
+                                {item.photoUrls.length > 3 && (
+                                  <span className="text-xs text-muted-foreground self-center">+{item.photoUrls.length - 3}</span>
+                                )}
+                              </div>
                             )}
                           </td>
                           <td className="px-4 py-3 text-sm font-mono">{item.CODE}</td>
