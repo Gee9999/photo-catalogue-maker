@@ -79,32 +79,32 @@ const Index = () => {
 
     try {
       const priceData: PriceData[] = await loadPriceFile(priceFile);
-      
+
       // Filter by minimum stock and optional negative stock
       const filteredByStock = priceData.filter((item) => {
-        const stock = typeof item.ON_HAND_STOCK === "number" 
-          ? item.ON_HAND_STOCK 
+        const stock = typeof item.ON_HAND_STOCK === "number"
+          ? item.ON_HAND_STOCK
           : parseFloat(String(item.ON_HAND_STOCK)) || 0;
-        
+
         // Include if stock meets minimum positive threshold
         if (stock >= minStock) return true;
-        
+
         // Include negative stock items if enabled
         if (includeNegativeStock && stock < 0) {
           // If maxNegativeStock is 0, include all negative items
           // Otherwise, only include items with stock >= -maxNegativeStock
           if (maxNegativeStock === 0 || stock >= -maxNegativeStock) return true;
         }
-        
+
         return false;
       });
-      
+
       const negativeCount = filteredByStock.filter(i => (typeof i.ON_HAND_STOCK === "number" ? i.ON_HAND_STOCK : parseFloat(String(i.ON_HAND_STOCK)) || 0) < 0).length;
       console.log(`Total Excel items: ${priceData.length}, After stock filter: ${filteredByStock.length} (${negativeCount} negative stock items)`);
-      
+
       // Match photos to the filtered items (includes items without photos)
       const matched = matchPhotosToPrice(photoFiles, filteredByStock);
-      
+
       setMatchedItems(matched);
 
       const withPhotos = matched.filter(m => m.photoFiles.length > 0).length;
@@ -208,9 +208,11 @@ const Index = () => {
               accept={{
                 "application/vnd.ms-excel": [".xls"],
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+                "text/csv": [".csv"],
+                "application/csv": [".csv"],
               }}
-              label="Price Excel File"
-              description="Upload your product details Excel file (CODE, DESCRIPTION, PRICE-A INCL)"
+              label="Price File (Excel or CSV)"
+              description="Upload your product details file (CODE, DESCRIPTION, PRICE-A INCL)"
               icon="excel"
             />
             {priceFile && (
@@ -314,7 +316,7 @@ const Index = () => {
                 )}
               </label>
             </div>
-            
+
             <Button
               onClick={handleProcess}
               disabled={!priceFile || photoFiles.length === 0 || isProcessing}
